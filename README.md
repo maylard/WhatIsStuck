@@ -52,7 +52,7 @@ Download the latest `.dmg` from [Releases](../../releases) and drag to Applicati
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/WhatIsStuck.git
+git clone https://github.com/maylard/WhatIsStuck.git
 cd WhatIsStuck
 
 # Install XcodeGen (if needed)
