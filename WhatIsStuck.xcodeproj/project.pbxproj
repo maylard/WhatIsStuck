@@ -1,0 +1,485 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		15784DD61C57E17F2CD74E34 /* ProcessInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF01CC32A89060704BE35C52 /* ProcessInfo.swift */; };
+		5145C9320AAA82FB9C3F5971 /* WhatIsStuckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C368BCA32820F5BDD0074BB /* WhatIsStuckApp.swift */; };
+		7DD540C7997A80030F502173 /* StuckFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D982235F5336FD66EC95122 /* StuckFile.swift */; };
+		84766E81567621585477C18C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD858A387F33FA5979F004F7 /* MainView.swift */; };
+		86582C0CE947DE3FECD0B536 /* LsofService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7161B9EB83D396ACA5D8A00C /* LsofService.swift */; };
+		87E2E75A3EBC42A2F0247FEF /* CloudProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54679006C1784BCE7AF0EB7F /* CloudProvider.swift */; };
+		8D246B18733B4DEC378B7355 /* ICloudService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5C577D91315F3D8667FEB4 /* ICloudService.swift */; };
+		95CB88651A304385E02B7647 /* FileRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD325186783E68A7E8052DA /* FileRowView.swift */; };
+		9C21C28340DE66D9D4D74FB4 /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0825C82DB9B8FB5424CC5E2 /* MainViewModel.swift */; };
+		C6A1F092B909343FD56128F4 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A13B5C61B36D927ABA3354 /* OnboardingView.swift */; };
+		F31E093C8F3A2F2C05A45886 /* PermissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D631C74F04C518013D83B1D /* PermissionService.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5A8549D56C73AD93EC172756 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 02A1185ED94D2D1FCDEFB8E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 284B51F8A589A53518EB299B;
+			remoteInfo = WhatIsStuck;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		19A76B164EAA08BF3B27A685 /* WhatIsStuck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WhatIsStuck.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D982235F5336FD66EC95122 /* StuckFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StuckFile.swift; sourceTree = "<group>"; };
+		4947D15F95C44C79D35BE85F /* WhatIsStuck.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WhatIsStuck.entitlements; sourceTree = "<group>"; };
+		523A5A6F1F7E5CEE537BF097 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		54679006C1784BCE7AF0EB7F /* CloudProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudProvider.swift; sourceTree = "<group>"; };
+		6C368BCA32820F5BDD0074BB /* WhatIsStuckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatIsStuckApp.swift; sourceTree = "<group>"; };
+		7161B9EB83D396ACA5D8A00C /* LsofService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LsofService.swift; sourceTree = "<group>"; };
+		8D631C74F04C518013D83B1D /* PermissionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionService.swift; sourceTree = "<group>"; };
+		98A13B5C61B36D927ABA3354 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A0825C82DB9B8FB5424CC5E2 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
+		AF01CC32A89060704BE35C52 /* ProcessInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfo.swift; sourceTree = "<group>"; };
+		BAD325186783E68A7E8052DA /* FileRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRowView.swift; sourceTree = "<group>"; };
+		D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WhatIsStuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD5C577D91315F3D8667FEB4 /* ICloudService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudService.swift; sourceTree = "<group>"; };
+		DD858A387F33FA5979F004F7 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		06219EECAE39039904B5A5FC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				19A76B164EAA08BF3B27A685 /* WhatIsStuck.app */,
+				D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0ED724F4AD4F1846A219AD54 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				6C368BCA32820F5BDD0074BB /* WhatIsStuckApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		124780EC5B37146D21C848BF /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A0825C82DB9B8FB5424CC5E2 /* MainViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		1D0FD9D23A1C3BABD0488FA4 /* WhatIsStuck */ = {
+			isa = PBXGroup;
+			children = (
+				0ED724F4AD4F1846A219AD54 /* App */,
+				7EEAAC371866290CB7A839CC /* Models */,
+				C04666EC59B49093F4835B0D /* Resources */,
+				367CBF2909D551DE2879D502 /* Services */,
+				124780EC5B37146D21C848BF /* ViewModels */,
+				23D2B56662E50BF57CEFA22F /* Views */,
+			);
+			path = WhatIsStuck;
+			sourceTree = "<group>";
+		};
+		23D2B56662E50BF57CEFA22F /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BAD325186783E68A7E8052DA /* FileRowView.swift */,
+				DD858A387F33FA5979F004F7 /* MainView.swift */,
+				98A13B5C61B36D927ABA3354 /* OnboardingView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		367CBF2909D551DE2879D502 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				DD5C577D91315F3D8667FEB4 /* ICloudService.swift */,
+				7161B9EB83D396ACA5D8A00C /* LsofService.swift */,
+				8D631C74F04C518013D83B1D /* PermissionService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		7EEAAC371866290CB7A839CC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				54679006C1784BCE7AF0EB7F /* CloudProvider.swift */,
+				AF01CC32A89060704BE35C52 /* ProcessInfo.swift */,
+				3D982235F5336FD66EC95122 /* StuckFile.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		BC6E44194B04085B984E78C6 /* WhatIsStuckTests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = WhatIsStuckTests;
+			sourceTree = "<group>";
+		};
+		C04666EC59B49093F4835B0D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				523A5A6F1F7E5CEE537BF097 /* Info.plist */,
+				4947D15F95C44C79D35BE85F /* WhatIsStuck.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F599C4516476D30F45F1619F = {
+			isa = PBXGroup;
+			children = (
+				1D0FD9D23A1C3BABD0488FA4 /* WhatIsStuck */,
+				BC6E44194B04085B984E78C6 /* WhatIsStuckTests */,
+				06219EECAE39039904B5A5FC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		284B51F8A589A53518EB299B /* WhatIsStuck */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DB2F030FCA752F6D71C1089D /* Build configuration list for PBXNativeTarget "WhatIsStuck" */;
+			buildPhases = (
+				0D227BCE655D73244D7FF673 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WhatIsStuck;
+			packageProductDependencies = (
+			);
+			productName = WhatIsStuck;
+			productReference = 19A76B164EAA08BF3B27A685 /* WhatIsStuck.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FA485020544D84CEFA2EDF8D /* WhatIsStuckTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54797C49B93FE852EC7E0B78 /* Build configuration list for PBXNativeTarget "WhatIsStuckTests" */;
+			buildPhases = (
+				3FEB0FF0AA468C5F225DAA9C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E0A7A050D5DD513750BB4A35 /* PBXTargetDependency */,
+			);
+			name = WhatIsStuckTests;
+			packageProductDependencies = (
+			);
+			productName = WhatIsStuckTests;
+			productReference = D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		02A1185ED94D2D1FCDEFB8E8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					284B51F8A589A53518EB299B = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					FA485020544D84CEFA2EDF8D = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 8E6BED5FDF6FA708F969C5C9 /* Build configuration list for PBXProject "WhatIsStuck" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F599C4516476D30F45F1619F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				284B51F8A589A53518EB299B /* WhatIsStuck */,
+				FA485020544D84CEFA2EDF8D /* WhatIsStuckTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0D227BCE655D73244D7FF673 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87E2E75A3EBC42A2F0247FEF /* CloudProvider.swift in Sources */,
+				95CB88651A304385E02B7647 /* FileRowView.swift in Sources */,
+				8D246B18733B4DEC378B7355 /* ICloudService.swift in Sources */,
+				86582C0CE947DE3FECD0B536 /* LsofService.swift in Sources */,
+				84766E81567621585477C18C /* MainView.swift in Sources */,
+				9C21C28340DE66D9D4D74FB4 /* MainViewModel.swift in Sources */,
+				C6A1F092B909343FD56128F4 /* OnboardingView.swift in Sources */,
+				F31E093C8F3A2F2C05A45886 /* PermissionService.swift in Sources */,
+				15784DD61C57E17F2CD74E34 /* ProcessInfo.swift in Sources */,
+				7DD540C7997A80030F502173 /* StuckFile.swift in Sources */,
+				5145C9320AAA82FB9C3F5971 /* WhatIsStuckApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3FEB0FF0AA468C5F225DAA9C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E0A7A050D5DD513750BB4A35 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 284B51F8A589A53518EB299B /* WhatIsStuck */;
+			targetProxy = 5A8549D56C73AD93EC172756 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1BED9D9037BD06E6DC42D724 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuckTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WhatIsStuck.app/Contents/MacOS/WhatIsStuck";
+			};
+			name = Debug;
+		};
+		21B3D3D69379920E3B03A3FF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = WhatIsStuck;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		72E0AC6C3477F05601A61FBD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuckTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WhatIsStuck.app/Contents/MacOS/WhatIsStuck";
+			};
+			name = Release;
+		};
+		BEC6B95C36DC1EF620765288 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WhatIsStuck/Resources/WhatIsStuck.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = WhatIsStuck/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuck;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C6CBF1CB2B077EAFD2915FB0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = WhatIsStuck;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		C96509FC18A8DC0579AF9E31 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WhatIsStuck/Resources/WhatIsStuck.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = WhatIsStuck/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuck;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		54797C49B93FE852EC7E0B78 /* Build configuration list for PBXNativeTarget "WhatIsStuckTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1BED9D9037BD06E6DC42D724 /* Debug */,
+				72E0AC6C3477F05601A61FBD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8E6BED5FDF6FA708F969C5C9 /* Build configuration list for PBXProject "WhatIsStuck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				21B3D3D69379920E3B03A3FF /* Debug */,
+				C6CBF1CB2B077EAFD2915FB0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DB2F030FCA752F6D71C1089D /* Build configuration list for PBXNativeTarget "WhatIsStuck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BEC6B95C36DC1EF620765288 /* Debug */,
+				C96509FC18A8DC0579AF9E31 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 02A1185ED94D2D1FCDEFB8E8 /* Project object */;
+}

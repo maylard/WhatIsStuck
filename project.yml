@@ -1,0 +1,47 @@
+name: WhatIsStuck
+options:
+  bundleIdPrefix: com.yourname
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "15.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    PRODUCT_NAME: WhatIsStuck
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+
+targets:
+  WhatIsStuck:
+    type: application
+    platform: macOS
+    sources:
+      - path: WhatIsStuck
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        INFOPLIST_FILE: WhatIsStuck/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.yourname.WhatIsStuck
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: WhatIsStuck/Resources/WhatIsStuck.entitlements
+    entitlements:
+      path: WhatIsStuck/Resources/WhatIsStuck.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.files.user-selected.read-write: true
+
+  WhatIsStuckTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: WhatIsStuckTests
+    dependencies:
+      - target: WhatIsStuck
