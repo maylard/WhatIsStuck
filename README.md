@@ -1,116 +1,99 @@
 # WhatIsStuck
 
-A native macOS utility that helps you identify which files are blocking cloud sync (iCloud, OneDrive, etc.) and which processes have them open.
+<p align="center">
+  <img src="icon.png" width="128" height="128" alt="WhatIsStuck App Icon">
+</p>
 
-## The Problem This Solves
+<p align="center">
+  <strong>Find out what's blocking your iCloud sync</strong>
+</p>
 
-Ever seen iCloud show "Uploading 1 item" but it never completes? And clicking the info button doesn't tell you WHICH file is stuck?
+<p align="center">
+  A native macOS utility that identifies files stuck in cloud sync and shows which apps have them open.
+</p>
 
-This app solves that by:
-1. Querying the iCloud CloudDocs database to find stuck files
+---
+
+## The Problem
+
+Ever seen iCloud show **"Uploading 1 item"** that never completes? Clicking the info button doesn't tell you *which* file is stuck or *why*.
+
+**WhatIsStuck** solves this by:
+1. Querying the iCloud CloudDocs database to find pending uploads
 2. Using `lsof` to identify which process has the file open
-3. Letting you quit the blocking process or reveal the file in Finder
+3. Letting you quit the blocking app or reveal the file in Finder
 
-**Real example:** During development, we discovered Claude Code itself was blocking an iCloud upload by holding `settings.local.json` open!
+## Screenshots
+
+| Scanning | Results |
+|----------|---------|
+| Shows progress while scanning cloud folders | Lists stuck files with blocking process |
 
 ## Features
 
-- **Find Stuck Files**: Scans iCloud Drive to find files that are stuck uploading or downloading
-- **See What's Blocking**: Uses `lsof` to identify which process has a file open
-- **Quick Actions**: Reveal files in Finder or quit blocking processes
-- **User Friendly**: Clean SwiftUI interface with helpful onboarding
+- **Find Stuck Files** - Scans iCloud Drive, Desktop, Documents, and Downloads
+- **See What's Blocking** - Shows which app has each file open
+- **Quick Actions** - Reveal in Finder or quit blocking apps with one click
+- **Smart Filtering** - Ignores system processes (fileproviderd, Spotlight, etc.)
+- **Clean UI** - Native SwiftUI interface with guided onboarding
 
 ## Requirements
 
 - macOS 13.0 (Ventura) or later
-- Xcode 15.0 or later
-- Apple Developer account (for code signing and notarization)
+- Full Disk Access permission (guided setup on first launch)
 
-## Setup
+## Installation
 
-### Option 1: Using XcodeGen (Recommended)
+### Option 1: Download Release (Recommended)
 
-1. Install XcodeGen:
-   ```bash
-   brew install xcodegen
-   ```
+Download the latest `.dmg` from [Releases](../../releases) and drag to Applications.
 
-2. Generate the Xcode project:
-   ```bash
-   cd WhatIsStuck
-   xcodegen generate
-   ```
-
-3. Open `WhatIsStuck.xcodeproj` in Xcode
-
-### Option 2: Manual Setup in Xcode
-
-1. Open Xcode and create a new project:
-   - Choose "macOS" → "App"
-   - Product Name: `WhatIsStuck`
-   - Interface: `SwiftUI`
-   - Language: `Swift`
-   - Uncheck "Use Core Data"
-   - Uncheck "Include Tests" (or add later)
-
-2. Delete the auto-generated files (ContentView.swift, WhatIsStuckApp.swift)
-
-3. Drag the `WhatIsStuck` folder into your project navigator
-
-4. Configure build settings:
-   - Deployment Target: macOS 13.0
-   - Enable Hardened Runtime: Yes
-   - App Sandbox: No (required for lsof/brctl access)
-
-5. Add the entitlements file to your project
-
-## Building
-
-1. Open the project in Xcode
-2. Select your development team in Signing & Capabilities
-3. Build with `Cmd+B`
-4. Run with `Cmd+R`
-
-## Distribution
-
-### Notarization (Required for Direct Distribution)
-
-1. Create an Archive: `Product` → `Archive`
-2. In the Organizer, click `Distribute App`
-3. Choose `Developer ID` → `Direct Distribution`
-4. Xcode will automatically notarize the app
-5. Export the notarized app
-
-### Creating a DMG
+### Option 2: Build from Source
 
 ```bash
-# Install create-dmg
-brew install create-dmg
+# Clone the repo
+git clone https://github.com/YOUR_USERNAME/WhatIsStuck.git
+cd WhatIsStuck
 
-# Create DMG
-create-dmg \
-  --volname "WhatIsStuck" \
-  --window-pos 200 120 \
-  --window-size 600 400 \
-  --icon-size 100 \
-  --icon "WhatIsStuck.app" 150 190 \
-  --app-drop-link 450 190 \
-  "WhatIsStuck.dmg" \
-  "/path/to/WhatIsStuck.app"
+# Install XcodeGen (if needed)
+brew install xcodegen
+
+# Generate Xcode project
+xcodegen generate
+
+# Open in Xcode
+open WhatIsStuck.xcodeproj
 ```
+
+Build with `Cmd+B` and run with `Cmd+R`.
+
+## Usage
+
+1. **Grant Permission** - On first launch, follow the guide to enable Full Disk Access
+2. **Scan** - Click the scan button to find stuck files
+3. **Take Action** - Click "Reveal" to show in Finder or "Quit App" to release the file
 
 ## How It Works
 
-1. **Permission Request**: The app requires Full Disk Access to read the iCloud database and run `lsof`
-2. **Scan**: Queries the CloudDocs SQLite database for pending uploads and uses `lsof` to find open files
-3. **Match**: Correlates stuck files with the processes that have them open
-4. **Action**: Users can reveal files in Finder or quit blocking processes
+| Component | Purpose |
+|-----------|---------|
+| **ICloudService** | Queries `~/Library/Application Support/CloudDocs/session/db/client.db` for pending uploads |
+| **LsofService** | Runs `lsof +D` on cloud-synced folders to find open files |
+| **PermissionService** | Verifies Full Disk Access by testing database access |
 
-## Technical Details
+### What Gets Scanned
 
-- **ICloudService**: Reads `~/Library/Application Support/CloudDocs/session/db/client.db`
-- **LsofService**: Runs `/usr/sbin/lsof -F pcn` to find open files
-- **PermissionService**: Checks Full Disk Access by testing protected directory access
+- `~/Library/Mobile Documents/` - iCloud Drive
+- `~/Desktop/` - If Desktop sync is enabled
+- `~/Documents/` - If Documents sync is enabled
+- `~/Downloads/` - If synced to iCloud
+
+### Filtered Out
+
+System processes that *manage* sync (not blockers):
+- `fileproviderd`, `bird`, `cloudd`, `brctl`
+- `mds`, `Spotlight`, `quicklookd`
+- `Finder`, `com.apple.*` services
 
 ## Project Structure
 
@@ -119,28 +102,60 @@ WhatIsStuck/
 ├── App/
 │   └── WhatIsStuckApp.swift       # App entry point
 ├── Models/
-│   ├── CloudProvider.swift        # Enum for cloud providers
-│   ├── ProcessInfo.swift          # Process information model
+│   ├── CloudProvider.swift        # Cloud provider enum
+│   ├── ProcessInfo.swift          # Process info model
 │   └── StuckFile.swift            # Stuck file model
 ├── Services/
-│   ├── ICloudService.swift        # iCloud sync status detection
-│   ├── LsofService.swift          # Process detection via lsof
-│   └── PermissionService.swift    # Full Disk Access management
+│   ├── ICloudService.swift        # iCloud database queries
+│   ├── LsofService.swift          # Process detection
+│   └── PermissionService.swift    # Permission management
 ├── ViewModels/
-│   └── MainViewModel.swift        # Main app logic
+│   └── MainViewModel.swift        # App state & logic
 ├── Views/
-│   ├── FileRowView.swift          # Single file row component
-│   ├── MainView.swift             # Main window view
-│   └── OnboardingView.swift       # Permission setup flow
+│   ├── FileRowView.swift          # File row component
+│   ├── MainView.swift             # Main window
+│   └── OnboardingView.swift       # Setup flow
 └── Resources/
-    ├── Info.plist                 # App configuration
-    └── WhatIsStuck.entitlements   # App entitlements
+    ├── Assets.xcassets/           # App icon
+    ├── Info.plist
+    └── WhatIsStuck.entitlements
 ```
 
-## License
+## Why Not App Store?
 
-MIT License - Feel free to use, modify, and distribute.
+App Store sandboxing prevents:
+- Running `lsof` to find which process has files open
+- Accessing the CloudDocs database
+- The core features that make this app useful
+
+Direct distribution with notarization allows full functionality while remaining secure.
+
+## Building for Distribution
+
+```bash
+# Archive in Xcode: Product → Archive
+# Then: Distribute App → Developer ID → Direct Distribution
+
+# Create DMG (optional)
+brew install create-dmg
+create-dmg \
+  --volname "WhatIsStuck" \
+  --window-size 600 400 \
+  --icon-size 100 \
+  --icon "WhatIsStuck.app" 150 190 \
+  --app-drop-link 450 190 \
+  "WhatIsStuck.dmg" \
+  "path/to/WhatIsStuck.app"
+```
+
+## Origin Story
+
+This app was born when I noticed iCloud stuck at "Uploading 1 item" (69KB/73KB) but couldn't see which file. After digging through `brctl dump` and `lsof`, I discovered **Claude Code** was holding `settings.local.json` open! This inspired creating a GUI so anyone can solve this without terminal commands.
 
 ## Contributing
 
 Contributions welcome! Please open an issue or PR.
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.

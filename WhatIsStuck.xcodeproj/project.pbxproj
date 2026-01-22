@@ -3,11 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		15784DD61C57E17F2CD74E34 /* ProcessInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF01CC32A89060704BE35C52 /* ProcessInfo.swift */; };
+		31AA46EB11BDAB58B0979230 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DF0292608EE7CCA1FD6414D4 /* Assets.xcassets */; };
 		5145C9320AAA82FB9C3F5971 /* WhatIsStuckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C368BCA32820F5BDD0074BB /* WhatIsStuckApp.swift */; };
 		7DD540C7997A80030F502173 /* StuckFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D982235F5336FD66EC95122 /* StuckFile.swift */; };
 		84766E81567621585477C18C /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD858A387F33FA5979F004F7 /* MainView.swift */; };
@@ -43,9 +44,10 @@
 		A0825C82DB9B8FB5424CC5E2 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		AF01CC32A89060704BE35C52 /* ProcessInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfo.swift; sourceTree = "<group>"; };
 		BAD325186783E68A7E8052DA /* FileRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRowView.swift; sourceTree = "<group>"; };
-		D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = WhatIsStuckTests.xctest; path = WhatIsStuck.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WhatIsStuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD5C577D91315F3D8667FEB4 /* ICloudService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudService.swift; sourceTree = "<group>"; };
 		DD858A387F33FA5979F004F7 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		DF0292608EE7CCA1FD6414D4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -127,6 +129,7 @@
 		C04666EC59B49093F4835B0D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				DF0292608EE7CCA1FD6414D4 /* Assets.xcassets */,
 				523A5A6F1F7E5CEE537BF097 /* Info.plist */,
 				4947D15F95C44C79D35BE85F /* WhatIsStuck.entitlements */,
 			);
@@ -150,6 +153,7 @@
 			buildConfigurationList = DB2F030FCA752F6D71C1089D /* Build configuration list for PBXNativeTarget "WhatIsStuck" */;
 			buildPhases = (
 				0D227BCE655D73244D7FF673 /* Sources */,
+				324849E70FF1FAACE166F179 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -190,6 +194,7 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					284B51F8A589A53518EB299B = {
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 					FA485020544D84CEFA2EDF8D = {
@@ -208,6 +213,7 @@
 			);
 			mainGroup = F599C4516476D30F45F1619F;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -216,6 +222,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		324849E70FF1FAACE166F179 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				31AA46EB11BDAB58B0979230 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0D227BCE655D73244D7FF673 /* Sources */ = {
@@ -358,16 +375,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = WhatIsStuck/Resources/WhatIsStuck.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = FKFX8285A3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WhatIsStuck/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.maylard.WhatIsStuck;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuck;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -437,16 +452,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = WhatIsStuck/Resources/WhatIsStuck.entitlements;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = FKFX8285A3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WhatIsStuck/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.maylard.WhatIsStuck;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuck;
 				SDKROOT = macosx;
 			};
 			name = Release;

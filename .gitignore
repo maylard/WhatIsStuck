@@ -53,6 +53,10 @@ Carthage/Build/
 # Archives
 *.xcarchive
 
+# Developer-only files (not for public repo)
+CLAUDE.md
+prompts/
+
 # Temporary files
 *.tmp
 *.temp
