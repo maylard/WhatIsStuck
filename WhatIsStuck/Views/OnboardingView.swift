@@ -150,31 +150,6 @@ struct OnboardingView: View {
                     .multilineTextAlignment(.center)
             }
 
-            // Permission Status Indicator
-            HStack(spacing: 12) {
-                Image(systemName: permissionService.hasFullDiskAccess ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.title3)
-                    .foregroundColor(permissionService.hasFullDiskAccess ? .green : .red)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(permissionService.hasFullDiskAccess ? "Permission Granted ✓" : "Permission Not Detected")
-                        .font(.headline)
-                        .foregroundColor(permissionService.hasFullDiskAccess ? .green : .red)
-
-                    Text(permissionService.hasFullDiskAccess
-                        ? "Full Disk Access is enabled"
-                        : "Follow the steps below to grant permission")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-            }
-            .padding(12)
-            .background(permissionService.hasFullDiskAccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
-            .cornerRadius(8)
-            .padding(.top, 8)
-
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -227,6 +202,32 @@ struct OnboardingView: View {
                 .cornerRadius(8)
             }
             .padding(.top, 20)
+
+            // Permission Status Indicator
+            if isCheckingPermissions || true { // Always show status area
+                HStack(spacing: 12) {
+                    Image(systemName: permissionService.hasFullDiskAccess ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(permissionService.hasFullDiskAccess ? .green : .red)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(permissionService.hasFullDiskAccess ? "Permission Granted ✓" : "Permission Not Detected")
+                            .font(.headline)
+                            .foregroundColor(permissionService.hasFullDiskAccess ? .green : .red)
+
+                        Text(permissionService.hasFullDiskAccess
+                            ? "Full Disk Access is enabled"
+                            : "Follow the steps below to grant permission")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(12)
+                .background(permissionService.hasFullDiskAccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                .cornerRadius(8)
+            }
 
             HStack(spacing: 16) {
                 Button(action: {
