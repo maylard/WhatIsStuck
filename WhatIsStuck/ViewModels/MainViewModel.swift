@@ -28,11 +28,11 @@ class MainViewModel: ObservableObject {
     init(
         lsofService: LsofService = LsofService(),
         iCloudService: ICloudService = ICloudService(),
-        permissionService: PermissionService = PermissionService()
+        permissionService: PermissionService? = nil
     ) {
         self.lsofService = lsofService
         self.iCloudService = iCloudService
-        self.permissionService = permissionService
+        self.permissionService = permissionService ?? PermissionService()
 
         // Observe permission changes
         self.permissionService.$hasFullDiskAccess
@@ -118,8 +118,9 @@ class MainViewModel: ObservableObject {
             return
         }
 
-        // Try to find the running application
-        guard let runningApp = NSRunningApplication.runningApplications(withProcessIdentifier: process.pid).first else {
+        // Try to find the running application by PID
+        let allApps = NSWorkspace.shared.runningApplications
+        guard let runningApp = allApps.first(where: { $0.processIdentifier == process.pid }) else {
             errorMessage = "Process \(process.name) (PID: \(process.pid)) is not running"
             return
         }
@@ -155,7 +156,8 @@ class MainViewModel: ObservableObject {
             return
         }
 
-        guard let runningApp = NSRunningApplication.runningApplications(withProcessIdentifier: process.pid).first else {
+        let allApps = NSWorkspace.shared.runningApplications
+        guard let runningApp = allApps.first(where: { $0.processIdentifier == process.pid }) else {
             errorMessage = "Process not found"
             return
         }
