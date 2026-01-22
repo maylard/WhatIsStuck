@@ -51,7 +51,7 @@ struct OnboardingView: View {
             navigationButtons
         }
         .padding(40)
-        .frame(width: 600, height: 500)
+        .frame(width: 700, height: 600)
     }
 
     private var progressIndicators: some View {
@@ -204,30 +204,33 @@ struct OnboardingView: View {
             .padding(.top, 20)
 
             // Permission Status Indicator
-            if isCheckingPermissions || true { // Always show status area
-                HStack(spacing: 12) {
-                    Image(systemName: permissionService.hasFullDiskAccess ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(permissionService.hasFullDiskAccess ? .green : .red)
+            HStack(spacing: 12) {
+                Image(systemName: permissionService.hasFullDiskAccess ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(permissionService.hasFullDiskAccess ? .green : .orange)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(permissionService.hasFullDiskAccess ? "Permission Granted ✓" : "Permission Not Detected")
-                            .font(.headline)
-                            .foregroundColor(permissionService.hasFullDiskAccess ? .green : .red)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(permissionService.hasFullDiskAccess ? "Permission Granted" : "Permission Required")
+                        .font(.headline)
+                        .foregroundColor(permissionService.hasFullDiskAccess ? .green : .primary)
 
-                        Text(permissionService.hasFullDiskAccess
-                            ? "Full Disk Access is enabled"
-                            : "Follow the steps below to grant permission")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-
-                    Spacer()
+                    Text(permissionService.hasFullDiskAccess
+                        ? "Full Disk Access is enabled. Click Continue below."
+                        : "Grant permission, then click Check Permission")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                .padding(12)
-                .background(permissionService.hasFullDiskAccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
-                .cornerRadius(8)
+
+                Spacer()
+
+                if isCheckingPermissions {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
             }
+            .padding(12)
+            .background(permissionService.hasFullDiskAccess ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+            .cornerRadius(8)
 
             HStack(spacing: 16) {
                 Button(action: {
@@ -245,13 +248,7 @@ struct OnboardingView: View {
                     checkPermission()
                 }) {
                     HStack {
-                        if isCheckingPermissions {
-                            ProgressView()
-                                .scaleEffect(0.7)
-                                .frame(width: 16, height: 16)
-                        } else {
-                            Image(systemName: "checkmark.circle")
-                        }
+                        Image(systemName: "arrow.clockwise")
                         Text("Check Permission")
                     }
                     .frame(maxWidth: .infinity)
@@ -330,15 +327,8 @@ struct OnboardingView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                } else {
-                    Button("Skip for Now") {
-                        // This button is intentionally less prominent
-                        // We want users to grant permissions
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundColor(.secondary)
-                    .disabled(true) // Force users to grant permissions
                 }
+                // No "Skip" button - user must grant permission to use the app
             }
             // No button on complete step - permission check will auto-transition
         }

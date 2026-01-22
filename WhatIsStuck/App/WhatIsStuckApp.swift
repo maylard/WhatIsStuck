@@ -49,8 +49,10 @@ struct WhatIsStuckApp: App {
             window.toolbarStyle = .unified
             window.titlebarAppearsTransparent = true
 
-            // Set minimum size
+            // Set minimum and initial size - use 700 width to fit both onboarding and main views
+            let initialSize = NSSize(width: 700, height: 600)
             window.minSize = NSSize(width: 700, height: 500)
+            window.setContentSize(initialSize)
 
             // Center the window
             window.center()

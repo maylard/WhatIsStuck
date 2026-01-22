@@ -5,10 +5,24 @@ import Combine
 @MainActor
 class MainViewModel: ObservableObject {
 
+    // MARK: - Scan Stage Enum
+
+    enum ScanStage: String {
+        case idle = ""
+        case checkingDatabase = "Checking iCloud database..."
+        case queryingUploads = "Finding pending uploads..."
+        case queryingDownloads = "Finding pending downloads..."
+        case findingOpenFiles = "Finding open files..."
+        case matchingProcesses = "Matching blocking processes..."
+        case complete = "Scan complete"
+    }
+
     // MARK: - Published Properties
 
     @Published var stuckFiles: [StuckFile] = []
+    @Published var openFiles: [String: ProcessInfo] = [:] // All open files in cloud folders
     @Published var isScanning: Bool = false
+    @Published var scanStage: ScanStage = .idle
     @Published var lastScanDate: Date?
     @Published var errorMessage: String?
     @Published var hasFullDiskAccess: Bool = false
@@ -48,34 +62,40 @@ class MainViewModel: ObservableObject {
         guard !isScanning else { return }
 
         isScanning = true
+        scanStage = .checkingDatabase
         errorMessage = nil
 
         do {
-            // Step 1: Find stuck files from iCloud
-            let cloudFiles = try await iCloudService.findStuckFiles()
+            // Step 1: Find pending files from iCloud database
+            scanStage = .queryingUploads
+            let pendingFiles = try await iCloudService.findPendingFiles()
 
-            // Step 2: Get all open files from lsof in cloud directories
-            let openFilesMap = try await lsofService.findOpenFiles()
+            // Step 2: Find USER processes (not system) blocking files in cloud folders
+            scanStage = .findingOpenFiles
+            let blockingProcesses = try await iCloudService.findBlockingProcesses()
+            self.openFiles = blockingProcesses
 
-            // Step 3: Enrich iCloud files with lsof process information
+            // Step 3: Correlate pending files with blocking processes
+            scanStage = .matchingProcesses
             let enrichedFiles = enrichFilesWithProcessInfo(
-                cloudFiles: cloudFiles,
-                openFilesMap: openFilesMap
+                cloudFiles: pendingFiles,
+                openFilesMap: blockingProcesses
             )
 
             // Step 4: Update UI
+            scanStage = .complete
             stuckFiles = enrichedFiles
             lastScanDate = Date()
 
-            // Clear error if scan succeeded
-            if !stuckFiles.isEmpty {
-                errorMessage = nil
+            // Show result message based on what we found
+            if blockingProcesses.isEmpty && pendingFiles.isEmpty {
+                errorMessage = "No stuck files or blocking processes found. iCloud sync is working normally!"
+            } else if blockingProcesses.isEmpty && !pendingFiles.isEmpty {
+                errorMessage = "Found \(pendingFiles.count) files pending sync. No blocking processes detected - sync should complete normally."
             } else {
-                errorMessage = "No stuck files found. Your iCloud sync is working smoothly!"
+                errorMessage = nil
             }
 
-        } catch let error as LsofService.LsofError {
-            handleScanError(error)
         } catch let error as ICloudService.ICloudError {
             handleScanError(error)
         } catch {
@@ -83,6 +103,7 @@ class MainViewModel: ObservableObject {
         }
 
         isScanning = false
+        scanStage = .idle
     }
 
     /// Opens Finder to reveal the specified file

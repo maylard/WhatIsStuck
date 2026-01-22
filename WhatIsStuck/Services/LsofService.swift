@@ -9,7 +9,7 @@ actor LsofService {
         case lsofNotFound
         case executionFailed(String)
         case parseError(String)
-        case noOutput
+        case timeout
 
         var errorDescription: String? {
             switch self {
@@ -19,110 +19,120 @@ actor LsofService {
                 return "Failed to execute lsof: \(message)"
             case .parseError(let message):
                 return "Failed to parse lsof output: \(message)"
-            case .noOutput:
-                return "No output received from lsof"
+            case .timeout:
+                return "lsof timed out"
             }
         }
     }
 
     // MARK: - Public Methods
 
-    /// Finds all open files in the specified cloud provider sync directories
-    /// - Parameter providers: Cloud providers to check (defaults to all)
-    /// - Returns: Dictionary mapping file paths to the ProcessInfo that has them open
-    func findOpenFiles(for providers: [CloudProvider] = CloudProvider.allCases) async throws -> [String: ProcessInfo] {
-        // Collect all sync paths from the specified providers
-        let syncPaths = providers.flatMap { $0.syncPaths }
-
-        guard !syncPaths.isEmpty else {
-            return [:]
-        }
-
-        // Run lsof to get all open files
-        let lsofOutput = try await runLsof()
-
-        // Parse the output
-        let allOpenFiles = try parseLsofOutput(lsofOutput)
-
-        // Filter to only include files in cloud sync directories
-        return filterBySyncPaths(allOpenFiles, syncPaths: syncPaths)
-    }
-
-    /// Finds which process (if any) has a specific file open
-    /// - Parameter filePath: The absolute path to the file
-    /// - Returns: ProcessInfo if the file is open, nil otherwise
-    func findProcessUsingFile(_ filePath: String) async throws -> ProcessInfo? {
-        let lsofOutput = try await runLsof(for: filePath)
-        let openFiles = try parseLsofOutput(lsofOutput)
-        return openFiles[filePath]
-    }
-
-    // MARK: - Private Methods
-
-    /// Runs lsof with parseable output format
-    private func runLsof(for specificPath: String? = nil) async throws -> String {
+    /// Finds all open files in the cloud sync directories
+    /// Returns a dictionary mapping file paths to the ProcessInfo that has them open
+    func findOpenFiles() async throws -> [String: ProcessInfo] {
         let lsofPath = "/usr/sbin/lsof"
 
-        // Verify lsof exists
         guard FileManager.default.fileExists(atPath: lsofPath) else {
             throw LsofError.lsofNotFound
         }
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: lsofPath)
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
 
-        // -F pcn: Field output format
-        //   p = PID
-        //   c = command name
-        //   n = file name/path
-        // +c 0: Don't truncate command names
-        var arguments = ["-F", "pcn", "+c", "0"]
+        // Only scan cloud sync directories - much faster than scanning everything
+        let cloudPaths = [
+            "\(home)/Library/Mobile Documents"
+        ]
 
-        // If checking a specific path, add it
-        if let path = specificPath {
-            arguments.append(path)
+        var allOpenFiles: [String: ProcessInfo] = [:]
+
+        for cloudPath in cloudPaths {
+            guard FileManager.default.fileExists(atPath: cloudPath) else {
+                continue
+            }
+
+            // Run lsof with +D to recursively scan just this directory
+            // Use timeout to prevent hanging
+            if let openFiles = try? await runLsofOnDirectory(cloudPath) {
+                allOpenFiles.merge(openFiles) { existing, _ in existing }
+            }
         }
 
-        process.arguments = arguments
+        return allOpenFiles
+    }
 
-        // Set up pipes for stdout and stderr
+    /// Finds which process has a specific file open
+    func findProcessForFile(_ filePath: String) async -> ProcessInfo? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        process.arguments = ["-F", "pcn", filePath]
+
         let outputPipe = Pipe()
-        let errorPipe = Pipe()
         process.standardOutput = outputPipe
-        process.standardError = errorPipe
+        process.standardError = Pipe()
 
         do {
             try process.run()
+
+            // Timeout after 5 seconds
+            let timeoutTask = Task {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                process.terminate()
+            }
+
             process.waitUntilExit()
+            timeoutTask.cancel()
 
-            // Read output
             let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-
-            // lsof returns exit code 1 when no files are found, which is not an error for us
-            if process.terminationStatus != 0 && process.terminationStatus != 1 {
-                let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                throw LsofError.executionFailed(errorMessage)
-            }
-
             guard let output = String(data: outputData, encoding: .utf8) else {
-                throw LsofError.noOutput
+                return nil
             }
 
-            return output
-
-        } catch let error as LsofError {
-            throw error
+            return parseFirstProcess(from: output)
         } catch {
-            throw LsofError.executionFailed(error.localizedDescription)
+            return nil
         }
     }
 
-    /// Parses lsof field output format
-    /// Format: Lines starting with p=PID, c=command, n=name
-    private func parseLsofOutput(_ output: String) throws -> [String: ProcessInfo] {
-        var result: [String: ProcessInfo] = [:]
+    // MARK: - Private Methods
 
+    private func runLsofOnDirectory(_ dirPath: String) async throws -> [String: ProcessInfo] {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        // +D recursively scans directory, +c 0 doesn't truncate names
+        process.arguments = ["-F", "pcn", "+c", "0", "+D", dirPath]
+
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = Pipe()
+
+        try process.run()
+
+        // Create a task that will terminate the process after timeout
+        let timeoutTask = Task {
+            try await Task.sleep(nanoseconds: 30_000_000_000) // 30 second timeout
+            if process.isRunning {
+                process.terminate()
+            }
+        }
+
+        process.waitUntilExit()
+        timeoutTask.cancel()
+
+        if process.terminationStatus != 0 && process.terminationStatus != 1 {
+            // lsof returns 1 when no files found, which is OK
+            throw LsofError.executionFailed("Exit code: \(process.terminationStatus)")
+        }
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        guard let output = String(data: outputData, encoding: .utf8) else {
+            return [:]
+        }
+
+        return parseLsofOutput(output)
+    }
+
+    private func parseLsofOutput(_ output: String) -> [String: ProcessInfo] {
+        var result: [String: ProcessInfo] = [:]
         let lines = output.components(separatedBy: .newlines)
 
         var currentPID: Int32?
@@ -136,46 +146,22 @@ actor LsofService {
 
             switch firstChar {
             case "p":
-                // Process ID
                 currentPID = Int32(value)
-
             case "c":
-                // Command name
                 currentCommand = value
-
             case "n":
-                // File name/path
                 guard let pid = currentPID,
                       let command = currentCommand,
-                      !value.isEmpty else {
+                      value.hasPrefix("/"),
+                      !isSystemFile(value) else {
                     continue
                 }
 
-                // Only include regular files (skip pipes, sockets, etc.)
-                // Regular files typically start with /
-                guard value.hasPrefix("/") else {
-                    continue
-                }
-
-                // Skip special files and system locations
-                if isSystemOrSpecialFile(value) {
-                    continue
-                }
-
-                // Create ProcessInfo
-                let processInfo = ProcessInfo(
-                    pid: pid,
-                    name: command,
-                    command: command
-                )
-
-                // Store the mapping (keep first process if multiple have the same file open)
+                let processInfo = ProcessInfo(pid: pid, name: command, command: command)
                 if result[value] == nil {
                     result[value] = processInfo
                 }
-
             default:
-                // Ignore other field types
                 continue
             }
         }
@@ -183,44 +169,28 @@ actor LsofService {
         return result
     }
 
-    /// Filters the open files dictionary to only include files in sync paths
-    private func filterBySyncPaths(_ openFiles: [String: ProcessInfo], syncPaths: [String]) -> [String: ProcessInfo] {
-        return openFiles.filter { filePath, _ in
-            syncPaths.contains { syncPath in
-                filePath.hasPrefix(syncPath)
+    private func parseFirstProcess(from output: String) -> ProcessInfo? {
+        let lines = output.components(separatedBy: .newlines)
+        var pid: Int32?
+        var command: String?
+
+        for line in lines {
+            guard !line.isEmpty else { continue }
+            if line.hasPrefix("p"), let p = Int32(String(line.dropFirst())) {
+                pid = p
+            } else if line.hasPrefix("c") {
+                command = String(line.dropFirst())
             }
         }
+
+        if let pid = pid, let command = command {
+            return ProcessInfo(pid: pid, name: command, command: command)
+        }
+        return nil
     }
 
-    /// Checks if a file path is a system or special file that should be ignored
-    private func isSystemOrSpecialFile(_ path: String) -> Bool {
-        // Skip device files
-        if path.hasPrefix("/dev/") {
-            return true
-        }
-
-        // Skip system directories
-        let systemPrefixes = [
-            "/System/",
-            "/private/var/",
-            "/var/",
-            "/tmp/",
-            "/usr/",
-            "/bin/",
-            "/sbin/"
-        ]
-
-        for prefix in systemPrefixes {
-            if path.hasPrefix(prefix) {
-                return true
-            }
-        }
-
-        // Skip pipes and sockets (they don't start with / anyway, but double-check)
-        if path.contains("pipe:") || path.contains("socket:") {
-            return true
-        }
-
-        return false
+    private func isSystemFile(_ path: String) -> Bool {
+        let systemPrefixes = ["/dev/", "/System/", "/private/var/", "/var/", "/tmp/", "/usr/", "/bin/", "/sbin/"]
+        return systemPrefixes.contains { path.hasPrefix($0) }
     }
 }

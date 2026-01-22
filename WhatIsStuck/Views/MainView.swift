@@ -75,12 +75,21 @@ struct MainView: View {
     private var contentView: some View {
         if !viewModel.hasFullDiskAccess {
             permissionView
-        } else if let error = viewModel.errorMessage {
-            errorView(message: error)
-        } else if viewModel.stuckFiles.isEmpty && !viewModel.isScanning {
+        } else if viewModel.isScanning {
+            scanningView
+        } else if viewModel.lastScanDate == nil {
+            // Never scanned yet
             emptyStateView
+        } else if viewModel.openFiles.isEmpty {
+            // Scanned but no blocking processes found
+            if let error = viewModel.errorMessage {
+                successView(message: error)
+            } else {
+                successView(message: "No blocking processes found. iCloud sync should be working normally.")
+            }
         } else {
-            fileListView
+            // Found blocking processes
+            resultsView
         }
     }
 
@@ -157,68 +166,210 @@ struct MainView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle")
+            Image(systemName: "icloud")
+                .font(.system(size: 60))
+                .foregroundColor(.accentColor)
+
+            VStack(spacing: 8) {
+                Text("Ready to Scan")
+                    .font(.system(size: 18, weight: .semibold))
+
+                Text("Click scan to find files that might be blocking iCloud sync.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+            }
+
+            Button("Scan Now") {
+                Task {
+                    await viewModel.scan()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Success View
+
+    private func successView(message: String) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 60))
                 .foregroundColor(.green)
 
             VStack(spacing: 8) {
-                Text("No Stuck Files Found")
+                Text("All Clear!")
                     .font(.system(size: 18, weight: .semibold))
 
-                Text("All your cloud storage files are syncing properly.")
+                Text(message)
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 400)
             }
 
-            if viewModel.lastScanDate == nil {
-                Button("Run Your First Scan") {
-                    Task {
-                        await viewModel.scan()
-                    }
+            Button("Scan Again") {
+                Task {
+                    await viewModel.scan()
                 }
-                .buttonStyle(.bordered)
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Scanning View
+
+    private var scanningView: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+
+            VStack(spacing: 8) {
+                Text("Scanning...")
+                    .font(.system(size: 18, weight: .semibold))
+
+                Text(viewModel.scanStage.rawValue)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .animation(.easeInOut, value: viewModel.scanStage)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - File List
+    // MARK: - Results View
 
-    private var fileListView: some View {
+    private var resultsView: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                if viewModel.isScanning {
-                    HStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                        Text("Scanning for stuck files...")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                // Header explaining what we found
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text("Found \(viewModel.openFiles.count) file(s) held open by apps")
+                            .font(.system(size: 14, weight: .semibold))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 40)
+
+                    Text("These files are open in other apps, which may prevent iCloud from syncing them. Close the app or the file to allow sync to complete.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
                 }
+                .padding(16)
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(8)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
 
-                ForEach(viewModel.stuckFiles) { file in
-                    VStack(spacing: 0) {
-                        FileRowView(
-                            file: file,
-                            onRevealInFinder: {
-                                viewModel.revealInFinder(file)
-                            },
-                            onQuitProcess: {
-                                Task {
-                                    await viewModel.quitBlockingProcess(file)
-                                }
-                            }
-                        )
-
-                        Divider()
-                            .padding(.leading, 64)
+                // List of blocking files
+                ForEach(Array(viewModel.openFiles.keys.sorted()), id: \.self) { path in
+                    if let process = viewModel.openFiles[path] {
+                        blockingFileRow(path: path, process: process)
+                        Divider().padding(.leading, 64)
                     }
                 }
             }
-            .padding(.vertical, 8)
+        }
+    }
+
+    private func sectionHeader(title: String, count: Int, icon: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundColor(.accentColor)
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+            Text("(\(count))")
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private func blockingFileRow(path: String, process: ProcessInfo) -> some View {
+        HStack(spacing: 12) {
+            // File icon from system
+            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                .resizable()
+                .frame(width: 40, height: 40)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(URL(fileURLWithPath: path).lastPathComponent)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+
+                Text(path)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "app.badge.fill")
+                        .font(.system(size: 10))
+                    Text("Open in: \(process.displayName)")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(.orange)
+            }
+
+            Spacer()
+
+            // Action buttons
+            HStack(spacing: 8) {
+                Button(action: {
+                    // Reveal file in Finder
+                    let url = URL(fileURLWithPath: path)
+                    if FileManager.default.fileExists(atPath: path) {
+                        NSWorkspace.shared.activateFileViewerSelecting([url])
+                    }
+                }) {
+                    Label("Reveal", systemImage: "folder")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.bordered)
+
+                if process.pid > 0 {
+                    Button(action: {
+                        // Try to quit the app
+                        quitProcess(process)
+                    }) {
+                        Label("Quit App", systemImage: "xmark.circle")
+                            .font(.system(size: 11))
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private func quitProcess(_ process: ProcessInfo) {
+        let apps = NSWorkspace.shared.runningApplications
+        if let app = apps.first(where: { $0.processIdentifier == process.pid }) {
+            let didQuit = app.terminate()
+            if !didQuit {
+                // Show alert that app couldn't be quit
+                let alert = NSAlert()
+                alert.messageText = "Couldn't Quit \(process.displayName)"
+                alert.informativeText = "Try closing the file manually in the app, or use Force Quit from the Apple menu."
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            } else {
+                // Rescan after quitting
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    await viewModel.scan()
+                }
+            }
         }
     }
 

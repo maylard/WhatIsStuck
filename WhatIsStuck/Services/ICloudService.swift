@@ -5,6 +5,32 @@ actor ICloudService {
     private let dbPath: String
     private let fileManager = FileManager.default
 
+    // System processes that manage iCloud/files - these are NOT blockers
+    private let systemProcesses = [
+        "fileproviderd",    // File Provider daemon
+        "FPCKService",      // File Provider Content Kit Service
+        "bird",             // iCloud sync daemon
+        "cloudd",           // iCloud daemon
+        "brctl",            // iCloud control tool
+        "fseventsd",        // File system events daemon
+        "mds",              // Metadata server (Spotlight)
+        "mds_stores",       // Metadata stores
+        "mdworker",         // Spotlight metadata workers
+        "Spotlight",        // Spotlight indexing
+        "suggestd",         // Suggestions daemon
+        "quicklookd",       // QuickLook daemon
+        "Finder",           // Finder (normal file browsing)
+        "com.apple"         // Any Apple system service
+    ]
+
+    // System files that should be ignored
+    private let ignoredFiles = [
+        ".DS_Store",        // macOS folder metadata
+        ".localized",       // Localization file
+        ".Spotlight-V100",  // Spotlight index
+        ".fseventsd"        // File system events
+    ]
+
     enum ICloudError: Error {
         case databaseNotFound
         case databaseLocked
@@ -20,471 +46,210 @@ actor ICloudService {
 
     // MARK: - Public Interface
 
-    func findStuckFiles() async throws -> [StuckFile] {
-        var stuckFiles: [StuckFile] = []
-
-        // Try querying the SQLite database first
+    /// Find files that are pending sync in iCloud
+    func findPendingFiles() async throws -> [StuckFile] {
         do {
-            stuckFiles = try await queryCloudDocsDatabase()
+            return try queryCloudDocsDatabase()
         } catch {
-            print("Database query failed: \(error). Falling back to brctl...")
-            // Fallback to brctl if database query fails
-            stuckFiles = try await queryBrctl()
+            print("Database query failed: \(error)")
+            return []
         }
-
-        return stuckFiles
     }
 
-    // MARK: - SQLite Database Queries
+    /// Find USER processes (not system) blocking files in cloud folders
+    func findBlockingProcesses() async throws -> [String: ProcessInfo] {
+        let home = fileManager.homeDirectoryForCurrentUser.path
 
-    private func queryCloudDocsDatabase() async throws -> [StuckFile] {
-        // Check if database exists and is accessible
-        guard fileManager.fileExists(atPath: dbPath) else {
-            throw ICloudError.databaseNotFound
+        // iCloud syncs multiple locations:
+        // 1. ~/Library/Mobile Documents/ - Main iCloud Drive (includes app folders like Pages, Numbers, etc.)
+        // 2. ~/Desktop/ - if Desktop & Documents sync is enabled
+        // 3. ~/Documents/ - if Desktop & Documents sync is enabled
+        // 4. ~/Downloads/ - if synced to iCloud
+        let cloudPaths = [
+            "\(home)/Library/Mobile Documents",
+            "\(home)/Desktop",
+            "\(home)/Documents",
+            "\(home)/Downloads"
+        ]
+
+        var allBlockingProcesses: [String: ProcessInfo] = [:]
+
+        for cloudPath in cloudPaths {
+            guard fileManager.fileExists(atPath: cloudPath) else {
+                continue
+            }
+
+            // Run lsof on each cloud-synced directory
+            // The +D flag recursively scans all subdirectories
+            if let output = try? await runLsof(on: cloudPath) {
+                let processes = parseAndFilterLsof(output)
+                allBlockingProcesses.merge(processes) { existing, _ in existing }
+            }
         }
 
-        guard fileManager.isReadableFile(atPath: dbPath) else {
-            throw ICloudError.permissionDenied
+        return allBlockingProcesses
+    }
+
+    // MARK: - Private: Database Queries
+
+    private func queryCloudDocsDatabase() throws -> [StuckFile] {
+        guard fileManager.fileExists(atPath: dbPath) else {
+            throw ICloudError.databaseNotFound
         }
 
         var db: OpaquePointer?
         var stuckFiles: [StuckFile] = []
 
-        // Open database with read-only flag to avoid locking issues
         let flags = SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX
         let result = sqlite3_open_v2(dbPath, &db, flags, nil)
 
         guard result == SQLITE_OK else {
-            let errorMessage = String(cString: sqlite3_errmsg(db))
             sqlite3_close(db)
-
             if result == SQLITE_BUSY || result == SQLITE_LOCKED {
                 throw ICloudError.databaseLocked
             }
-            throw ICloudError.queryFailed("Failed to open database: \(errorMessage)")
+            throw ICloudError.queryFailed("Failed to open database")
         }
 
-        defer {
-            sqlite3_close(db)
-        }
+        defer { sqlite3_close(db) }
 
-        // Query to find pending uploads
-        // Join client_uploads with client_items to get file information
+        // Query for pending uploads
         let query = """
         SELECT
             ci.item_filename,
             cu.transfer_size,
-            cu.throttle_state,
-            ci.item_localname,
-            ci.item_doc_id,
-            ci.item_type
+            cu.throttle_state
         FROM client_uploads cu
         INNER JOIN client_items ci ON cu.throttle_id = ci.rowid
-        WHERE cu.throttle_state IS NOT NULL
         ORDER BY cu.transfer_size DESC
-        """
-
-        var statement: OpaquePointer?
-
-        guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK else {
-            let errorMessage = String(cString: sqlite3_errmsg(db))
-            throw ICloudError.queryFailed("Failed to prepare statement: \(errorMessage)")
-        }
-
-        defer {
-            sqlite3_finalize(statement)
-        }
-
-        // Execute query and collect results
-        while sqlite3_step(statement) == SQLITE_ROW {
-            if let file = extractStuckFileFromRow(statement) {
-                stuckFiles.append(file)
-            }
-        }
-
-        // Also check for items in error state
-        let errorFiles = try await queryErrorFiles(db: db)
-        stuckFiles.append(contentsOf: errorFiles)
-
-        return stuckFiles
-    }
-
-    private func extractStuckFileFromRow(_ statement: OpaquePointer?) -> StuckFile? {
-        guard let statement = statement else { return nil }
-
-        // Extract filename
-        var fileName = "Unknown"
-        if let filenamePtr = sqlite3_column_text(statement, 0) {
-            fileName = String(cString: filenamePtr)
-        }
-
-        // Extract transfer size
-        let transferSize = sqlite3_column_int64(statement, 1)
-
-        // Extract throttle state
-        var throttleState: Int32 = 0
-        if sqlite3_column_type(statement, 2) != SQLITE_NULL {
-            throttleState = sqlite3_column_int(statement, 2)
-        }
-
-        // Extract local name (path component)
-        var localName: String?
-        if let localNamePtr = sqlite3_column_text(statement, 3) {
-            localName = String(cString: localNamePtr)
-        }
-
-        // Construct full path
-        let path = constructFilePath(fileName: fileName, localName: localName)
-
-        // Determine sync state based on throttle_state
-        let syncState = determineSyncState(throttleState: throttleState)
-
-        // Try to find blocking process (bird daemon is the iCloud sync daemon)
-        let blockingProcess = findBlockingProcess(filePath: path)
-
-        return StuckFile(
-            path: path,
-            fileName: fileName,
-            size: transferSize,
-            provider: .iCloud,
-            blockingProcess: blockingProcess,
-            detectedAt: Date(),
-            syncState: syncState
-        )
-    }
-
-    private func queryErrorFiles(db: OpaquePointer?) async throws -> [StuckFile] {
-        var errorFiles: [StuckFile] = []
-
-        // Query for items with errors or stuck in various states
-        let errorQuery = """
-        SELECT
-            item_filename,
-            item_size,
-            item_state,
-            item_localname
-        FROM client_items
-        WHERE item_state IN (1, 2, 3)
-        AND (item_upload_error IS NOT NULL OR item_download_error IS NOT NULL)
         LIMIT 100
         """
 
         var statement: OpaquePointer?
-
-        guard sqlite3_prepare_v2(db, errorQuery, -1, &statement, nil) == SQLITE_OK else {
-            return errorFiles
-        }
-
-        defer {
-            sqlite3_finalize(statement)
-        }
-
-        while sqlite3_step(statement) == SQLITE_ROW {
-            var fileName = "Unknown"
-            if let filenamePtr = sqlite3_column_text(statement, 0) {
-                fileName = String(cString: filenamePtr)
-            }
-
-            let size = sqlite3_column_int64(statement, 1)
-
-            var localName: String?
-            if let localNamePtr = sqlite3_column_text(statement, 3) {
-                localName = String(cString: localNamePtr)
-            }
-
-            let path = constructFilePath(fileName: fileName, localName: localName)
-            let blockingProcess = findBlockingProcess(filePath: path)
-
-            let stuckFile = StuckFile(
-                path: path,
-                fileName: fileName,
-                size: size,
-                provider: .iCloud,
-                blockingProcess: blockingProcess,
-                detectedAt: Date(),
-                syncState: .error
-            )
-
-            errorFiles.append(stuckFile)
-        }
-
-        return errorFiles
-    }
-
-    // MARK: - Path Construction
-
-    private func constructFilePath(fileName: String, localName: String?) -> String {
-        let home = fileManager.homeDirectoryForCurrentUser.path
-
-        // Try to construct the full path
-        if let localName = localName, !localName.isEmpty {
-            // localName might contain path components
-            let iCloudPath = "\(home)/Library/Mobile Documents"
-            return "\(iCloudPath)/\(localName)"
-        }
-
-        // Fallback: search common iCloud directories
-        let iCloudPaths = [
-            "\(home)/Library/Mobile Documents/com~apple~CloudDocs",
-            "\(home)/Library/Mobile Documents"
-        ]
-
-        for basePath in iCloudPaths {
-            if let foundPath = findFileInDirectory(basePath: basePath, fileName: fileName) {
-                return foundPath
-            }
-        }
-
-        // If we can't find it, return a best-guess path
-        return "\(iCloudPaths[0])/\(fileName)"
-    }
-
-    private func findFileInDirectory(basePath: String, fileName: String) -> String? {
-        let enumerator = fileManager.enumerator(atPath: basePath)
-
-        while let element = enumerator?.nextObject() as? String {
-            if element.hasSuffix(fileName) || element.contains(fileName) {
-                return "\(basePath)/\(element)"
-            }
-        }
-
-        return nil
-    }
-
-    // MARK: - Sync State Determination
-
-    private func determineSyncState(throttleState: Int32) -> StuckFile.SyncState {
-        // Based on CloudDocs throttle states:
-        // 0 or NULL: unknown/pending
-        // 1: active upload
-        // 2: throttled/paused
-        // 3: error state
-        switch throttleState {
-        case 0:
-            return .pending
-        case 1:
-            return .uploading
-        case 2:
-            return .pending
-        case 3:
-            return .error
-        default:
-            return .unknown
-        }
-    }
-
-    // MARK: - Process Detection
-
-    private func findBlockingProcess(filePath: String) -> ProcessInfo? {
-        // Try to find if bird (iCloud sync daemon) is accessing this file
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
-        task.arguments = ["-Fp", filePath]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = Pipe()
-
-        do {
-            try task.run()
-            task.waitUntilExit()
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let output = String(data: data, encoding: .utf8) else {
-                return nil
-            }
-
-            // Parse lsof output to extract PID
-            let lines = output.components(separatedBy: .newlines)
-            for line in lines {
-                if line.hasPrefix("p") {
-                    let pidString = line.dropFirst()
-                    if let pid = Int32(pidString) {
-                        return getProcessInfo(pid: pid)
-                    }
-                }
-            }
-        } catch {
-            // lsof failed, return default bird process
-            return ProcessInfo(
-                pid: -1,
-                name: "bird",
-                command: "iCloud Sync Daemon"
-            )
-        }
-
-        return nil
-    }
-
-    private func getProcessInfo(pid: Int32) -> ProcessInfo {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/bin/ps")
-        task.arguments = ["-p", "\(pid)", "-o", "comm="]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-
-        do {
-            try task.run()
-            task.waitUntilExit()
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let name = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !name.isEmpty {
-                return ProcessInfo(pid: pid, name: name, command: name)
-            }
-        } catch {
-            // Fallback
-        }
-
-        return ProcessInfo(pid: pid, name: "Unknown Process", command: "")
-    }
-
-    // MARK: - brctl Fallback
-
-    private func queryBrctl() async throws -> [StuckFile] {
-        var stuckFiles: [StuckFile] = []
-
-        // First, get overall sync status
-        let syncStatus = try await runBrctlStatus()
-
-        // If there are issues, try to get diagnostic info
-        if syncStatus.contains("stuck") || syncStatus.contains("error") || syncStatus.contains("waiting") {
-            stuckFiles = try await getBrctlDiagnostics()
-        }
-
-        return stuckFiles
-    }
-
-    private func runBrctlStatus() async throws -> String {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/brctl")
-        task.arguments = ["status"]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = Pipe()
-
-        do {
-            try task.run()
-            task.waitUntilExit()
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let output = String(data: data, encoding: .utf8) else {
-                throw ICloudError.brctlFailed("Failed to decode brctl output")
-            }
-
-            return output
-        } catch {
-            throw ICloudError.brctlFailed("brctl command failed: \(error.localizedDescription)")
-        }
-    }
-
-    private func getBrctlDiagnostics() async throws -> [StuckFile] {
-        var stuckFiles: [StuckFile] = []
-
-        // Try to get diagnostic info with brctl diagnose
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/brctl")
-        task.arguments = ["diagnose", "-t", "-d"]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = Pipe()
-
-        do {
-            try task.run()
-            task.waitUntilExit()
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let output = String(data: data, encoding: .utf8) else {
-                return stuckFiles
-            }
-
-            // Parse brctl diagnose output for stuck files
-            stuckFiles = parseBrctlDiagnostics(output)
-        } catch {
-            // brctl diagnose might not be available, that's okay
-        }
-
-        return stuckFiles
-    }
-
-    private func parseBrctlDiagnostics(_ output: String) -> [StuckFile] {
-        var stuckFiles: [StuckFile] = []
-        let lines = output.components(separatedBy: .newlines)
-
-        for line in lines {
-            // Look for lines indicating upload/download issues
-            if line.contains("upload") || line.contains("download") || line.contains("pending") {
-                // Try to extract file information
-                // This is a best-effort parse as brctl output format may vary
-                if let file = extractFileFromBrctlLine(line) {
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if let file = extractFile(statement, isUpload: true) {
                     stuckFiles.append(file)
                 }
             }
+            sqlite3_finalize(statement)
         }
 
         return stuckFiles
     }
 
-    private func extractFileFromBrctlLine(_ line: String) -> StuckFile? {
-        // This is a simplified parser - brctl output format may vary
-        // Looking for patterns like: "/path/to/file.txt: uploading (12345 bytes)"
+    private func extractFile(_ statement: OpaquePointer?, isUpload: Bool) -> StuckFile? {
+        guard let statement = statement else { return nil }
 
-        let components = line.components(separatedBy: ":")
-        guard components.count >= 2 else { return nil }
-
-        let path = components[0].trimmingCharacters(in: .whitespaces)
-        guard fileManager.fileExists(atPath: path) else { return nil }
-
-        let fileName = URL(fileURLWithPath: path).lastPathComponent
-
-        // Try to get file size
-        var size: Int64 = 0
-        do {
-            let attributes = try fileManager.attributesOfItem(atPath: path)
-            size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-        } catch {
-            // Ignore error, use 0 size
+        var fileName = "Unknown"
+        if let ptr = sqlite3_column_text(statement, 0) {
+            fileName = String(cString: ptr)
         }
 
-        // Determine sync state from line content
-        let syncState: StuckFile.SyncState
-        let lowerLine = line.lowercased()
-        if lowerLine.contains("upload") {
-            syncState = .uploading
-        } else if lowerLine.contains("download") {
-            syncState = .downloading
-        } else if lowerLine.contains("error") {
-            syncState = .error
-        } else if lowerLine.contains("pending") {
-            syncState = .pending
-        } else {
-            syncState = .unknown
-        }
+        let size = sqlite3_column_int64(statement, 1)
+        let throttleState = sqlite3_column_int(statement, 2)
+
+        let home = fileManager.homeDirectoryForCurrentUser.path
+        let path = "\(home)/Library/Mobile Documents/com~apple~CloudDocs/\(fileName)"
 
         return StuckFile(
             path: path,
             fileName: fileName,
             size: size,
             provider: .iCloud,
-            blockingProcess: ProcessInfo(pid: -1, name: "bird", command: "iCloud Sync"),
+            blockingProcess: nil, // Will be enriched later
             detectedAt: Date(),
-            syncState: syncState
+            syncState: isUpload ? (throttleState == 1 ? .uploading : .pending) : .downloading
         )
     }
 
-    // MARK: - Utility Methods
+    // MARK: - Private: lsof for finding blocking processes
 
-    func getSyncStatus() async throws -> String {
-        // Get high-level sync status
-        return try await runBrctlStatus()
+    private func runLsof(on directory: String) async throws -> String {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        task.arguments = ["-F", "pcn", "+c", "0", "+D", directory]
+
+        let outputPipe = Pipe()
+        task.standardOutput = outputPipe
+        task.standardError = Pipe()
+
+        try task.run()
+
+        // Timeout after 30 seconds
+        let timeoutTask = Task {
+            try await Task.sleep(nanoseconds: 30_000_000_000)
+            if task.isRunning { task.terminate() }
+        }
+
+        task.waitUntilExit()
+        timeoutTask.cancel()
+
+        let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8) ?? ""
     }
 
-    func isICloudSyncEnabled() async -> Bool {
-        // Check if iCloud Drive is enabled
-        let ubiquityURL = fileManager.url(forUbiquityContainerIdentifier: nil)
-        return ubiquityURL != nil
+    /// Parse lsof output and FILTER OUT system processes and system files
+    private func parseAndFilterLsof(_ output: String) -> [String: ProcessInfo] {
+        var result: [String: ProcessInfo] = [:]
+        let lines = output.components(separatedBy: .newlines)
+
+        var currentPID: Int32?
+        var currentCommand: String?
+
+        for line in lines {
+            guard !line.isEmpty else { continue }
+
+            let firstChar = line.first
+            let value = String(line.dropFirst())
+
+            switch firstChar {
+            case "p":
+                currentPID = Int32(value)
+            case "c":
+                currentCommand = value
+            case "n":
+                guard let pid = currentPID,
+                      let command = currentCommand,
+                      value.hasPrefix("/") else {
+                    continue
+                }
+
+                // FILTER OUT system processes - they are NOT blockers
+                if isSystemProcess(command) {
+                    continue
+                }
+
+                // FILTER OUT system files
+                let fileName = URL(fileURLWithPath: value).lastPathComponent
+                if isSystemFile(fileName) {
+                    continue
+                }
+
+                // Skip directories (we want files)
+                var isDir: ObjCBool = false
+                if fileManager.fileExists(atPath: value, isDirectory: &isDir), isDir.boolValue {
+                    continue
+                }
+
+                let processInfo = ProcessInfo(pid: pid, name: command, command: command)
+                if result[value] == nil {
+                    result[value] = processInfo
+                }
+            default:
+                continue
+            }
+        }
+
+        return result
+    }
+
+    private func isSystemProcess(_ name: String) -> Bool {
+        let lowered = name.lowercased()
+        return systemProcesses.contains { lowered.contains($0.lowercased()) }
+    }
+
+    private func isSystemFile(_ fileName: String) -> Bool {
+        return ignoredFiles.contains { fileName == $0 || fileName.hasPrefix($0) }
     }
 }
