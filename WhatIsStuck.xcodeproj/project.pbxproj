@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -43,7 +43,7 @@
 		A0825C82DB9B8FB5424CC5E2 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
 		AF01CC32A89060704BE35C52 /* ProcessInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfo.swift; sourceTree = "<group>"; };
 		BAD325186783E68A7E8052DA /* FileRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRowView.swift; sourceTree = "<group>"; };
-		D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WhatIsStuckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D54458B8E850E661720A7DE2 /* WhatIsStuckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = WhatIsStuckTests.xctest; path = WhatIsStuck.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD5C577D91315F3D8667FEB4 /* ICloudService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudService.swift; sourceTree = "<group>"; };
 		DD858A387F33FA5979F004F7 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -190,7 +190,6 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					284B51F8A589A53518EB299B = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 					FA485020544D84CEFA2EDF8D = {
@@ -209,7 +208,6 @@
 			);
 			mainGroup = F599C4516476D30F45F1619F;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -360,14 +358,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = WhatIsStuck/Resources/WhatIsStuck.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = FKFX8285A3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WhatIsStuck/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuck;
+				PRODUCT_BUNDLE_IDENTIFIER = com.maylard.WhatIsStuck;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -437,14 +437,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = WhatIsStuck/Resources/WhatIsStuck.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = FKFX8285A3;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = WhatIsStuck/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourname.WhatIsStuck;
+				PRODUCT_BUNDLE_IDENTIFIER = com.maylard.WhatIsStuck;
 				SDKROOT = macosx;
 			};
 			name = Release;
